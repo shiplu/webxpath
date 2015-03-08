@@ -2,25 +2,35 @@ import os
 import sys
 import urllib2
 import hashlib
+import urlparse
 from datetime import datetime, timedelta
 
 from lxml import etree
 import prettytable
 import config
 
+NAME="RESOURCE"
 
 
 def log(message):
     if config.LOG:
         args = (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), message)
-        print >> sys.stderr, "[URLXPATH] %s - %s" % args
-
+        print >> sys.stderr, "[XPATH] %s - %s" % args
 
 def md5(data):
     return hashlib.md5(data).hexdigest()
 
+def is_url(url):
+    return urlparse.urlparse(url).scheme != ""
 
 def urlcontent(url):
+
+    # If its a url just return as it is
+    if not is_url(url):
+        with open(url) as f:
+            content = f.read()
+        return content
+
     # Use the md5 of the url as the cache file name
     cachefile = os.path.join('.cache', "%s.htm" % md5(url))
 
@@ -64,7 +74,7 @@ def main():
     log("max len = %s" % max_row_len)
     tbl.add_column("SL", range(1, max_row_len+1))
 
-    urlmap = dict([(url, "URL-%02d" % idx) for (idx, url) in enumerate(urls, 1)])
+    urlmap = dict([(url, "%s-%02d" % (NAME, idx)) for (idx, url) in enumerate(urls, 1)])
 
     for url, matches in cols:
         if len(matches) < max_row_len:
@@ -74,7 +84,7 @@ def main():
 
     print tbl
 
-    print "URL Reference:"
+    print "%s Reference:" % NAME
     for url, name in sorted(urlmap.items(), key=lambda u: u[1]):
         print "%2s - %s" % (name, url)
 
@@ -82,7 +92,8 @@ def main():
 def xpath_urls():
     if len(sys.argv) < 3:
         print >> sys.stderr, "XPath and Website sould be passed as command-line argument"
-        print >> sys.stderr, "Syntax: webquery.py xpath url1 url2 url3 .."
+        print >> sys.stderr, "Syntax: webquery.py xpath path1 path2 path3 ..."
+        print >> sys.stderr, "A `path` can be any url or file location ..."
         sys.exit(1)
 
     args = sys.argv
@@ -90,7 +101,7 @@ def xpath_urls():
     urls = args[2:]
 
     log("XPath: %s" % xpath)
-    log("URLs: %s" % urls)
+    log("PATHs: %s" % urls)
     return xpath, urls
 
 if __name__ == '__main__':
