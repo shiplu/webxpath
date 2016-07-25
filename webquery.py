@@ -6,7 +6,6 @@ import urlparse
 from datetime import datetime, timedelta
 
 from lxml import etree
-import prettytable
 import config
 
 NAME="RESOURCE"
@@ -58,51 +57,29 @@ def urlcontent(url):
 
 
 def main():
-    xpath, urls = xpath_urls()
-
-    tbl = prettytable.PrettyTable()
-    tbl.valign = 't'
-    tbl.align = 'l'
-
-    cols = []
-    for url in urls:
-        root = etree.HTML(urlcontent(url), base_url=url)
-        cols.append((url, [unicode(el) for el in root.xpath(xpath)]))
-
-    log("cols: %s" % cols)
-    max_row_len = max([len(matches) for col, matches in cols])
-    log("max len = %s" % max_row_len)
-    tbl.add_column("SL", range(1, max_row_len+1))
-
-    urlmap = dict([(url, "%s-%02d" % (NAME, idx)) for (idx, url) in enumerate(urls, 1)])
-
-    for url, matches in cols:
-        if len(matches) < max_row_len:
-            padded_list = [""]*(max_row_len - len(matches))
-            matches.extend(padded_list)
-        tbl.add_column(urlmap[url], matches, align='l')
-
-    print tbl
-
-    print "%s Reference:" % NAME
-    for url, name in sorted(urlmap.items(), key=lambda u: u[1]):
-        print "%2s - %s" % (name, url)
+    xpaths, url = xpaths_url()
 
 
-def xpath_urls():
+    root = etree.HTML(urlcontent(url), base_url=url)
+    for xpath in xpaths:
+       for el in root.xpath(xpath):
+           print el
+        
+
+
+def xpaths_url():
     if len(sys.argv) < 3:
         print >> sys.stderr, "XPath and Website sould be passed as command-line argument"
-        print >> sys.stderr, "Syntax: webquery.py xpath path1 path2 path3 ..."
-        print >> sys.stderr, "A `path` can be any url or file location ..."
+        print >> sys.stderr, "Syntax: webquerymx.py url xpath1 xpath2 xpath3 ..."
         sys.exit(1)
 
     args = sys.argv
-    xpath = args[1]
-    urls = args[2:]
+    url = args[1]
+    xpaths = args[2:]
 
-    log("XPath: %s" % xpath)
-    log("PATHs: %s" % urls)
-    return xpath, urls
+    log("XPaths: %s" % xpaths)
+    log("URL: %s" % url)
+    return xpaths, url
 
 if __name__ == '__main__':
     main()
