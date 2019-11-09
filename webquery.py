@@ -1,26 +1,29 @@
 import os
 import sys
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import hashlib
-import urlparse
+import urllib.parse
 from datetime import datetime, timedelta
 
 from lxml import etree
 import config
 
-NAME="RESOURCE"
+NAME = "RESOURCE"
 
 
 def log(message):
     if config.LOG:
         args = (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), message)
-        print >> sys.stderr, "[XPATH] %s - %s" % args
+        print("[XPATH] %s - %s" % args, file=sys.stderr)
+
 
 def md5(data):
-    return hashlib.md5(data).hexdigest()
+    return hashlib.md5(data.encode()).hexdigest()
+
 
 def is_url(url):
-    return urlparse.urlparse(url).scheme != ""
+    return urllib.parse.urlparse(url).scheme != ""
+
 
 def urlcontent(url):
 
@@ -45,8 +48,8 @@ def urlcontent(url):
         file_creation_dt = current_dt - timedelta(hours=4)
 
     if (current_dt - file_creation_dt) > timedelta(hours=3):
-        req = urllib2.Request(url, headers={'User-Agent': config.USER_AGENT})
-        content = urllib2.urlopen(req).read()
+        req = urllib.request.Request(url, headers={'User-Agent': config.USER_AGENT})
+        content = urllib.request.urlopen(req).read().decode(encoding='utf-8')
         with open(cachefile, 'w') as f:
             f.write(content)
     else:
@@ -59,18 +62,16 @@ def urlcontent(url):
 def main():
     xpaths, url = xpaths_url()
 
-
     root = etree.HTML(urlcontent(url), base_url=url)
     for xpath in xpaths:
-       for el in root.xpath(xpath):
-           print el
-        
+        for el in root.xpath(xpath):
+            print(el)
 
 
 def xpaths_url():
     if len(sys.argv) < 3:
-        print >> sys.stderr, "XPath and Website sould be passed as command-line argument"
-        print >> sys.stderr, "Syntax: webquerymx.py url xpath1 xpath2 xpath3 ..."
+        print("XPath and Website sould be passed as command-line argument", file=sys.stderr)
+        print("Syntax: webquerymx.py url xpath1 xpath2 xpath3 ...", file=sys.stderr)
         sys.exit(1)
 
     args = sys.argv
@@ -80,6 +81,7 @@ def xpaths_url():
     log("XPaths: %s" % xpaths)
     log("URL: %s" % url)
     return xpaths, url
+
 
 if __name__ == '__main__':
     main()
