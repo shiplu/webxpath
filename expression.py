@@ -83,3 +83,11 @@ class RegEx(Expression):
 class Fixed(Expression):
     def extract(self, input):
         return self.statement
+
+
+if __name__ == '__main__':
+    string = "a b c\td\ne\n"
+    my_expression = Split("\t") | Join(" ") | Split("\n") | Join(" ") | F(str.strip) | Split(" ")
+    assert my_expression.parse(string) == ['a', 'b', 'c', 'd', 'e']
+    another_expression = Join("") | Split("c") | Index(1)
+    assert another_expression.parse(my_expression.parse(string)) == "de"
