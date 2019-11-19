@@ -1,5 +1,6 @@
 from itertools import count
 import re
+from copy import deepcopy
 
 
 class BaseExpression(object):
@@ -18,20 +19,31 @@ class BaseExpression(object):
     def __eq__(self, other):
         return other is not None and self.statement == other.statement and self.next == other.next
 
+    def __copy__(self):
+        return type(self)(self.statement, self.next)
+
+    def __deepcopy__(self, memo):
+        clone = type(self)(self.statement)
+        memo[id(self)] = clone
+        if self.next is not None:
+            clone.next = deepcopy(self.next, memo)
+        return clone
+
     def __or__(self, other):
         if self is other or self == other:
             return self
 
-        if self.next is None:
-            self.next = other
-        else:
-            self.next.__or__(other)
+        clone = deepcopy(self)
 
-        return self
+        if clone.next is None:
+            clone.next = other
+        else:
+            clone.next = clone.next | other
+
+        return clone
 
 
 class Expression(BaseExpression):
-
     def parse(self, inp):
         cur = self
         for iteration in count():
@@ -88,6 +100,9 @@ class Fixed(Expression):
 if __name__ == '__main__':
     string = "a b c\td\ne\n"
     my_expression = Split("\t") | Join(" ") | Split("\n") | Join(" ") | F(str.strip) | Split(" ")
+    new_my_expression = my_expression | Index(0)
+    assert my_expression is not new_my_expression
+    assert (my_expression | Index(0)).parse(string) == 'a'
     assert my_expression.parse(string) == ['a', 'b', 'c', 'd', 'e']
     another_expression = Join("") | Split("c") | Index(1)
     assert another_expression.parse(my_expression.parse(string)) == "de"
