@@ -4,6 +4,8 @@ from copy import deepcopy
 
 
 class BaseExpression(object):
+    __slots__ = ['statement', 'next']
+
     def __init__(self, statement, next=None):
         self.statement = statement
         self.next = next
