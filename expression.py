@@ -23,10 +23,15 @@ class BaseExpression(object):
         return type(self)(self.statement, self.next)
 
     def __deepcopy__(self, memo):
-        clone = type(self)(self.statement)
+        cls = self.__class__
+        clone = cls.__new__(cls)
         memo[id(self)] = clone
+
+        clone.next = None
+        clone.statement = self.statement
         if self.next is not None:
             clone.next = deepcopy(self.next, memo)
+
         return clone
 
     def __or__(self, other):
