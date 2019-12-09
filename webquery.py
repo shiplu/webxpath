@@ -5,7 +5,6 @@ import urllib.error
 import urllib.parse
 import hashlib
 import argparse
-import urllib.parse
 from datetime import datetime, timedelta
 
 from lxml import etree
