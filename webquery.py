@@ -1,14 +1,12 @@
 import os
 import sys
-import urllib.request
-import urllib.error
-import urllib.parse
 import hashlib
+import urllib.request, urllib.parse, urllib.error
 import argparse
 from datetime import datetime, timedelta
-
 from lxml import etree
 import config
+import prettytable
 
 NAME = "RESOURCE"
 
@@ -65,13 +63,47 @@ def main():
     cmd_args = cmdline_args()
 
     root = etree.HTML(urlcontent(cmd_args.url), base_url=cmd_args.url)
-    for xpath in cmd_args.xpath:
-        for el in root.xpath(xpath):
-            print(el)
+
+    if cmd_args.table:
+        tbl = prettytable.PrettyTable()
+        tbl.valign = 't'
+        tbl.align = 'l'
+
+        cols = []
+        for xpath in cmd_args.xpath:
+            cols.append((xpath, [str(el).strip() for el in root.xpath(xpath)]))
+
+        log("cols: %s" % cols)
+        max_row_len = max([len(matches) for col, matches in cols])
+        log("max len = %s" % max_row_len)
+        tbl.add_column("SL", list(range(1, max_row_len + 1)))
+
+        xpathmap = dict([(xpath, "%s-%02d" % (NAME, idx)) for (idx, xpath) in enumerate(cmd_args.xpath, 1)])
+
+        for xpath, matches in cols:
+            if len(matches) < max_row_len:
+                padded_list = [""] * (max_row_len - len(matches))
+                matches.extend(padded_list)
+            tbl.add_column(xpathmap[xpath], matches, align='l')
+
+        print(tbl)
+
+        print(("%s Ref.:" % NAME))
+        for xpath, name in sorted(list(xpathmap.items()), key=lambda u: u[1]):
+            print(("%2s - %s" % (name, xpath)))
+
+    else:
+
+        for xpath in cmd_args.xpath:
+            print("Xpath: %s" % xpath)
+            for position_match in enumerate(root.xpath(xpath), 1):
+                print("%3s %s" % (position_match))
 
 
 def cmdline_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument('-t', '--table', action='store_true', default=False,
+                        help='Shows matches in a table')
     parser.add_argument('url', help="url to query")
     parser.add_argument('xpath', nargs='+', help='xpath to apply')
     return parser.parse_args()
