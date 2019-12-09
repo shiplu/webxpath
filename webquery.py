@@ -1,7 +1,10 @@
 import os
 import sys
-import urllib.request, urllib.error, urllib.parse
+import urllib.request
+import urllib.error
+import urllib.parse
 import hashlib
+import argparse
 import urllib.parse
 from datetime import datetime, timedelta
 
@@ -60,27 +63,19 @@ def urlcontent(url):
 
 
 def main():
-    xpaths, url = xpaths_url()
+    cmd_args = cmdline_args()
 
-    root = etree.HTML(urlcontent(url), base_url=url)
-    for xpath in xpaths:
+    root = etree.HTML(urlcontent(cmd_args.url), base_url=cmd_args.url)
+    for xpath in cmd_args.xpath:
         for el in root.xpath(xpath):
             print(el)
 
 
-def xpaths_url():
-    if len(sys.argv) < 3:
-        print("XPath and Website sould be passed as command-line argument", file=sys.stderr)
-        print("Syntax: webquerymx.py url xpath1 xpath2 xpath3 ...", file=sys.stderr)
-        sys.exit(1)
-
-    args = sys.argv
-    url = args[1]
-    xpaths = args[2:]
-
-    log("XPaths: %s" % xpaths)
-    log("URL: %s" % url)
-    return xpaths, url
+def cmdline_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('url', help="url to query")
+    parser.add_argument('xpath', nargs='+', help='xpath to apply')
+    return parser.parse_args()
 
 
 if __name__ == '__main__':
