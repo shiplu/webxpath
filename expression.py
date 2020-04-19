@@ -87,6 +87,25 @@ class XPath(Expression):
         return input.xpath(self.statement)
 
 
+class Strip(Expression):
+    def extract(self, input):
+        lstripped = re.sub(r'^' + self.statement, '', input)
+        rstripped = re.sub(self.statement + r'$', '', lstripped)
+        return rstripped
+
+
+class StripNonAlNum(Expression):
+    def __init__(self, next=None):
+        statement = re.compile(r'^[^A-z0-9]+'), re.compile(r'[^A-z0-9]+$')
+        super().__init__(statement, next)
+
+    def extract(self, input):
+        lpat, rpat = self.statement
+        lstripped = lpat.sub('', input)
+        rstripped = rpat.sub('', lstripped)
+        return rstripped
+
+
 class F(Expression):
     def extract(self, input):
         return self.statement(input)
@@ -97,6 +116,23 @@ class RegEx(Expression):
         match = re.search(self.statement, input)
         if match:
             return match[1]
+
+
+class DedupRe(Expression):
+    """Squeeze repeated patterns. Good for removing repeated characters.
+    The statement is a regex of single unit. The unit can be a single
+    character like bellow example or a word.
+
+    Example:
+    >>> DedupRe('[a-z]').extract('aaaabcddde')
+    abcde
+    """
+
+    def __init__(self, statement, next=None):
+        super().__init__(re.compile(r'(%s)\1+' % statement), next)
+
+    def extract(self, input):
+        return self.statement.sub('\\1', input)
 
 
 class Fixed(Expression):
