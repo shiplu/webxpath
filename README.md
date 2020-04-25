@@ -16,3 +16,8 @@ For ubuntu install following packages.
 Just install packages from `requirements.txt` using `pip`.
 
     pip install -r requirements.txt
+
+## Known issues
+
+### No such file or directory: '.cache/....htm'
+Create a directory `.cache` inside the directory where you are running the command
