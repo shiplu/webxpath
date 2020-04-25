@@ -6,7 +6,7 @@ from copy import deepcopy
 class BaseExpression(object):
     __slots__ = ['statement', 'next']
 
-    def __init__(self, statement, next=None):
+    def __init__(self, statement=None, next=None):
         self.statement = statement
         self.next = next
 
@@ -133,6 +133,11 @@ class DedupRe(Expression):
 
     def extract(self, input):
         return self.statement.sub('\\1', input)
+
+
+class DedupLines(Expression):
+    def extract(self, input):
+        return re.sub(r'\n\s*\n', '\n', input)
 
 
 class Fixed(Expression):
