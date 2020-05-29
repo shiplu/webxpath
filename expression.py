@@ -83,8 +83,19 @@ class Split(Expression):
 
 
 class XPath(Expression):
+    """Execute XPath expression and returns list of matches"""
+
     def extract(self, input):
         return input.xpath(self.statement)
+
+
+class XPath1(XPath):
+    """Execute XPath expression and returns first match if it's a match """
+
+    def extract(self, input):
+        result = super().extract(input)
+        if result:
+            return result[0]
 
 
 class Strip(Expression):
@@ -113,9 +124,10 @@ class F(Expression):
 
 class RegEx(Expression):
     def extract(self, input):
-        match = re.search(self.statement, input)
-        if match:
-            return match[1]
+        if input is not None:
+            match = re.search(self.statement, input)
+            if match:
+                return match[1]
 
 
 class DedupRe(Expression):
