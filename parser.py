@@ -19,9 +19,14 @@ class Parser(object):
         cls = self.__class__
         return cls.registry[cls.__name__]
 
+    def canonical_url(self, url):
+        """By overriding this method canonical url can be used"""
+        return url
+
     def parse(self, url):
-        content = webquery.urlcontent(url)
-        root = etree.HTML(content, base_url=url)
+        canonical_url = self.canonical_url(url)
+        content = webquery.urlcontent(canonical_url)
+        root = etree.HTML(content, base_url=canonical_url)
         data = {name: expr.parse(root) for name, expr in self.fields.items()}
-        data['url'] = url
+        data['url'] = canonical_url
         return data
