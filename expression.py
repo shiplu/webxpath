@@ -1,7 +1,11 @@
 from itertools import count
 import re
 from copy import deepcopy
-
+import html
+import json
+import jq
+from lxml import etree
+from io import StringIO
 
 class BaseExpression(object):
     __slots__ = ['statement', 'next']
@@ -19,7 +23,7 @@ class BaseExpression(object):
         return ' | '.join(['%s(%r)' % (e.__class__.__name__, e.statement) for e in objs])
 
     def __eq__(self, other):
-        return other is not None and self.statement == other.statement and self.next == other.next
+        return other is not None and self.statement == other.statement and self.next == other.next and self.__class__ == other.__class__
 
     def __copy__(self):
         return type(self)(self.statement, self.next)
@@ -54,11 +58,13 @@ class Expression(BaseExpression):
     def parse(self, inp):
         cur = self
         for iteration in count():
+            # print("Expression %s on %s" % (cur, inp))
             result = cur.extract(inp)
             if cur.next is not None:
                 cur = cur.next
                 inp = result
             else:
+                # print("Result %s" % result)
                 return result
 
     def extract(self, input):
@@ -85,18 +91,32 @@ class Split(Expression):
 class XPath(Expression):
     """Execute XPath expression and returns list of matches"""
 
-    def extract(self, input):
-        return input.xpath(self.statement)
+    def extract(self, element):
+        if isinstance(element, str):
+            parser = etree.HTMLParser(remove_blank_text=True, encoding='utf-8')
+            element = etree.parse(StringIO(element), parser)
+        return element.xpath(self.statement)
 
 
 class XPath1(XPath):
     """Execute XPath expression and returns first match if it's a match """
 
-    def extract(self, input):
-        result = super().extract(input)
+    def extract(self, element):
+        result = super().extract(element)
         if result:
             return result[0]
 
+class UnEscape(Expression):
+    def extract(self, input):
+        return html.unescape(input)
+
+class Json(Expression):
+    def extract(self, input):
+        return json.loads(input)
+
+class Jq(Expression):
+    def extract(self, input):
+        return jq.compile(self.statement).input(input).all()
 
 class Strip(Expression):
     def extract(self, input):
@@ -127,7 +147,7 @@ class RegEx(Expression):
         if input is not None:
             match = re.search(self.statement, input)
             if match:
-                return match[1]
+                return match.group(1)
 
 
 class DedupRe(Expression):
