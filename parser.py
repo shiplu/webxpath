@@ -1,3 +1,4 @@
+import sys
 import webquery
 from lxml import etree
 import inspect
@@ -27,6 +28,12 @@ class Parser(object):
         canonical_url = self.canonical_url(url)
         content = webquery.urlcontent(canonical_url)
         root = etree.HTML(content, base_url=canonical_url)
-        data = {name: expr.parse(root) for name, expr in self.fields.items()}
+        data = {}
+        for name, expr in self.fields.items():
+            try:
+                data[name] = expr.parse(root)
+            except Exception as ex:
+                print("{} {} for '{}'".format(ex, expr, name))
+                raise
         data['url'] = canonical_url
         return data
