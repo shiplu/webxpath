@@ -6,6 +6,16 @@ import json
 import jq
 from lxml import etree
 from io import StringIO
+import html2text
+
+
+class Template:
+    def __init__(self, tmpl):
+        self.tmpl = tmpl
+
+    def format(self, *args, **kwargs):
+        return self.tmpl.format(*args, **kwargs)
+
 
 class BaseExpression(object):
     __slots__ = ["statement", "next"]
@@ -64,7 +74,7 @@ class BaseExpression(object):
 class Expression(BaseExpression):
     def parse(self, inp):
         cur = self
-        for iteration in count():
+        for _ in count():
             # print("Expression %s on %s" % (cur, inp))
             result = cur.extract(inp)
             if cur.next is not None:
@@ -120,6 +130,18 @@ class UnEscape(Expression):
     def extract(self, input):
         return html.unescape(input)
 
+
+class HTMLText(Expression):
+    """Converts HTML to text. HTML can be either a etree Element or ElementTree or an string"""
+
+    def extract(self, str_or_elementlike):
+        if isinstance(str_or_elementlike, (etree._Element, etree._ElementTree)):
+            html_str = etree.tostring(str_or_elementlike, encoding="unicode")
+        else:
+            html_str = str_or_elementlike
+        return html2text.html2text(html_str)
+
+
 class Json(Expression):
     def extract(self, input):
         return json.loads(input)
@@ -128,6 +150,12 @@ class Json(Expression):
 class Jq(Expression):
     def extract(self, input):
         return jq.compile(self.statement).input(input).all()
+
+
+class Jq1(Expression):
+    def extract(self, input):
+        return jq.compile(self.statement).input(input).first()
+
 
 class Strip(Expression):
     def extract(self, input):

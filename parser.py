@@ -2,7 +2,7 @@ import sys
 import webquery
 from lxml import etree
 import inspect
-from expression import Expression
+from expression import Expression, Template
 from collections import defaultdict
 
 
@@ -12,7 +12,7 @@ class Parser(object):
     @classmethod
     def __init_subclass__(cls):
         for name, member in inspect.getmembers(cls):
-            if isinstance(member, Expression):
+            if isinstance(member, (Expression, Template)):
                 cls.registry[cls.__name__][name] = member
 
     @property
@@ -28,12 +28,22 @@ class Parser(object):
         canonical_url = self.canonical_url(url)
         content = webquery.urlcontent(canonical_url)
         root = etree.HTML(content, base_url=canonical_url)
-        data = {}
+
+        data = {"url": canonical_url}
+        templates = {}
+
+        # process only Expressions and save template strings
         for name, expr in self.fields.items():
-            try:
-                data[name] = expr.parse(root)
-            except Exception as ex:
-                print("{} {} for '{}'".format(ex, expr, name))
-                raise
-        data['url'] = canonical_url
+            if isinstance(expr, Expression):
+                try:
+                    data[name] = expr.parse(root)
+                except Exception as ex:
+                    print("{} {} for '{}'".format(ex, expr, name))
+                    raise
+            elif isinstance(expr, Template):
+                templates[name] = expr
+
+        # Post process template urls
+        for name, template in templates.items():
+            data[name] = template.format(**data)
         return data

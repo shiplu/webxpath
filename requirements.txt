@@ -1,3 +1,5 @@
 lxml
 prettytable
 requests
+jq
+html2text
