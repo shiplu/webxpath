@@ -34,7 +34,7 @@ def urlcontent(url):
         return content
 
     # Use the md5 of the url as the cache file name
-    cachefile = os.path.join('.cache', "%s.htm" % md5(url))
+    cachefile = os.path.join(".cache", "%s.htm" % md5(url))
 
     # if the file is dowloaded more than 1 hours ago
     # it'll be redownloaded
@@ -48,12 +48,12 @@ def urlcontent(url):
         file_creation_dt = current_dt - timedelta(hours=4)
 
     if (current_dt - file_creation_dt) > timedelta(hours=3):
-        req = urllib.request.Request(url, headers={'User-Agent': config.USER_AGENT})
-        content = urllib.request.urlopen(req).read().decode(encoding='utf-8')
-        with open(cachefile, 'w') as f:
+        req = urllib.request.Request(url, headers={"User-Agent": config.USER_AGENT})
+        content = urllib.request.urlopen(req).read().decode(encoding="utf-8")
+        with open(cachefile, "w") as f:
             f.write(content)
     else:
-        with open(cachefile, 'r') as f:
+        with open(cachefile, "r") as f:
             content = f.read()
 
     return content
@@ -66,8 +66,8 @@ def main():
 
     if cmd_args.table:
         tbl = prettytable.PrettyTable()
-        tbl.valign = 't'
-        tbl.align = 'l'
+        tbl.valign = "t"
+        tbl.align = "l"
 
         cols = []
         for xpath in cmd_args.xpath:
@@ -78,13 +78,18 @@ def main():
         log("max len = %s" % max_row_len)
         tbl.add_column("SL", list(range(1, max_row_len + 1)))
 
-        xpathmap = dict([(xpath, "%s-%02d" % (NAME, idx)) for (idx, xpath) in enumerate(cmd_args.xpath, 1)])
+        xpathmap = dict(
+            [
+                (xpath, "%s-%02d" % (NAME, idx))
+                for (idx, xpath) in enumerate(cmd_args.xpath, 1)
+            ]
+        )
 
         for xpath, matches in cols:
             if len(matches) < max_row_len:
                 padded_list = [""] * (max_row_len - len(matches))
                 matches.extend(padded_list)
-            tbl.add_column(xpathmap[xpath], matches, align='l')
+            tbl.add_column(xpathmap[xpath], matches, align="l")
 
         print(tbl)
 
@@ -102,12 +107,17 @@ def main():
 
 def cmdline_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-t', '--table', action='store_true', default=False,
-                        help='Shows matches in a table')
-    parser.add_argument('url', help="url to query")
-    parser.add_argument('xpath', nargs='+', help='xpath to apply')
+    parser.add_argument(
+        "-t",
+        "--table",
+        action="store_true",
+        default=False,
+        help="Shows matches in a table",
+    )
+    parser.add_argument("url", help="url to query")
+    parser.add_argument("xpath", nargs="+", help="xpath to apply")
     return parser.parse_args()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

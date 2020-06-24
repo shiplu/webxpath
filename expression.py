@@ -8,7 +8,7 @@ from lxml import etree
 from io import StringIO
 
 class BaseExpression(object):
-    __slots__ = ['statement', 'next']
+    __slots__ = ["statement", "next"]
 
     def __init__(self, statement=None, next=None):
         self.statement = statement
@@ -20,10 +20,17 @@ class BaseExpression(object):
         while ptr.next is not None:
             ptr = ptr.next
             objs.append(ptr)
-        return ' | '.join(['%s(%r)' % (e.__class__.__name__, e.statement) for e in objs])
+        return " | ".join(
+            ["%s(%r)" % (e.__class__.__name__, e.statement) for e in objs]
+        )
 
     def __eq__(self, other):
-        return other is not None and self.statement == other.statement and self.next == other.next and self.__class__ == other.__class__
+        return (
+            other is not None
+            and self.statement == other.statement
+            and self.next == other.next
+            and self.__class__ == other.__class__
+        )
 
     def __copy__(self):
         return type(self)(self.statement, self.next)
@@ -93,7 +100,7 @@ class XPath(Expression):
 
     def extract(self, element):
         if isinstance(element, str):
-            parser = etree.HTMLParser(remove_blank_text=True, encoding='utf-8')
+            parser = etree.HTMLParser(remove_blank_text=True, encoding="utf-8")
             element = etree.parse(StringIO(element), parser)
         return element.xpath(self.statement)
 
@@ -106,7 +113,10 @@ class XPath1(XPath):
         if result:
             return result[0]
 
+
 class UnEscape(Expression):
+    """Unescape quoted html entities"""
+
     def extract(self, input):
         return html.unescape(input)
 
@@ -114,26 +124,27 @@ class Json(Expression):
     def extract(self, input):
         return json.loads(input)
 
+
 class Jq(Expression):
     def extract(self, input):
         return jq.compile(self.statement).input(input).all()
 
 class Strip(Expression):
     def extract(self, input):
-        lstripped = re.sub(r'^' + self.statement, '', input)
-        rstripped = re.sub(self.statement + r'$', '', lstripped)
+        lstripped = re.sub(r"^" + self.statement, "", input)
+        rstripped = re.sub(self.statement + r"$", "", lstripped)
         return rstripped
 
 
 class StripNonAlNum(Expression):
     def __init__(self, next=None):
-        statement = re.compile(r'^[^A-z0-9]+'), re.compile(r'[^A-z0-9]+$')
+        statement = re.compile(r"^[^A-z0-9]+"), re.compile(r"[^A-z0-9]+$")
         super().__init__(statement, next)
 
     def extract(self, input):
         lpat, rpat = self.statement
-        lstripped = lpat.sub('', input)
-        rstripped = rpat.sub('', lstripped)
+        lstripped = lpat.sub("", input)
+        rstripped = rpat.sub("", lstripped)
         return rstripped
 
 
@@ -161,15 +172,15 @@ class DedupRe(Expression):
     """
 
     def __init__(self, statement, next=None):
-        super().__init__(re.compile(r'(%s)\1+' % statement), next)
+        super().__init__(re.compile(r"(%s)\1+" % statement), next)
 
     def extract(self, input):
-        return self.statement.sub('\\1', input)
+        return self.statement.sub("\\1", input)
 
 
 class DedupLines(Expression):
     def extract(self, input):
-        return re.sub(r'\n\s*\n', '\n', input)
+        return re.sub(r"\n\s*\n", "\n", input)
 
 
 class Fixed(Expression):
@@ -177,12 +188,14 @@ class Fixed(Expression):
         return self.statement
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     string = "a b c\td\ne\n"
-    my_expression = Split("\t") | Join(" ") | Split("\n") | Join(" ") | F(str.strip) | Split(" ")
+    my_expression = (
+        Split("\t") | Join(" ") | Split("\n") | Join(" ") | F(str.strip) | Split(" ")
+    )
     new_my_expression = my_expression | Index(0)
     assert my_expression is not new_my_expression
-    assert (my_expression | Index(0)).parse(string) == 'a'
-    assert my_expression.parse(string) == ['a', 'b', 'c', 'd', 'e']
+    assert (my_expression | Index(0)).parse(string) == "a"
+    assert my_expression.parse(string) == ["a", "b", "c", "d", "e"]
     another_expression = Join("") | Split("c") | Index(1)
     assert another_expression.parse(my_expression.parse(string)) == "de"
