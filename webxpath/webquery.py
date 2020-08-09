@@ -4,9 +4,11 @@ import hashlib
 import urllib.request, urllib.parse, urllib.error
 import argparse
 from datetime import datetime, timedelta
+
 from lxml import etree
-import config
 import prettytable
+
+from webxpath import config
 
 NAME = "RESOURCE"
 
