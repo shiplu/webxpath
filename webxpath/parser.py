@@ -1,9 +1,11 @@
 import sys
-import webquery
-from lxml import etree
 import inspect
-from expression import Expression, Template
 from collections import defaultdict
+
+from lxml import etree
+
+from webxpath import webquery
+from webxpath.expression import Expression, Template
 
 
 class Parser(object):
